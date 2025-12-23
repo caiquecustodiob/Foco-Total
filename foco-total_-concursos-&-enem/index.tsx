@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -7,18 +8,22 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Registro do Service Worker para PWA
+// Registro do Service Worker usando caminho relativo estrito
+// Isso resolve o erro de 'origin mismatch' em ambientes de sandbox e na Vercel
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registrado com sucesso:', registration.scope);
-    }, err => {
-      console.log('Falha ao registrar SW:', err);
-    });
+    navigator.serviceWorker
+      .register('sw.js') // Sem a barra inicial para ser relativo ao diretório atual
+      .then(registration => {
+        console.log('✅ Service Worker registrado com sucesso:', registration.scope);
+      })
+      .catch(err => {
+        console.warn('⚠️ Falha no SW (comum em previews/iframes):', err.message);
+      });
   });
 }
 
-// Launch Queue API para lidar com abertura de arquivos .foco
+// Launch Queue API para suporte a arquivos nativos .foco
 if ('launchQueue' in window) {
   (window as any).launchQueue.setConsumer(async (params: any) => {
     if (params.files.length > 0) {
@@ -26,10 +31,9 @@ if ('launchQueue' in window) {
       const text = await file.text();
       try {
         const data = JSON.parse(text);
-        // Dispara evento customizado para o App processar o import
         window.dispatchEvent(new CustomEvent('foco-import-data', { detail: data }));
       } catch (e) {
-        console.error("Erro ao importar arquivo de lançamento:", e);
+        console.error("Erro ao processar arquivo de backup:", e);
       }
     }
   });

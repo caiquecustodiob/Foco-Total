@@ -1,53 +1,63 @@
-const CACHE_NAME = 'foco-total-cache-v6.0';
-const ASSETS_TO_CACHE = [
+
+const CACHE_NAME = 'foco-total-v8'; // Incrementei a versão para forçar atualização
+const ASSETS = [
   './',
-  './index.html',
-  './manifest.webmanifest',
-  './icon.svg',
-  './index.tsx',
+  'index.html',
+  'manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      console.log('📦 Realizando cache de ativos...');
+      return cache.addAll(ASSETS);
     })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('🧹 Removendo cache antigo:', key);
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+self.addEventListener('fetch', (e) => {
+  // Ignora requisições que não sejam GET ou de esquemas que não suportamos (ex: chrome-extension)
+  if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) return;
+
+  e.respondWith(
+    caches.match(e.request).then((cachedResponse) => {
+      // Estratégia: Cache First, fallback to Network
       if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+
+      return fetch(e.request).then((networkResponse) => {
+        // Se a resposta for válida, coloca no cache
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, responseToCache);
+          });
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return networkResponse;
+      }).catch(() => {
+        // Fallback para navegação offline: retorna a página inicial
+        if (e.request.mode === 'navigate') {
+          return caches.match('./');
+        }
       });
-    }).catch(() => {
-      // Retorna a página inicial se falhar (offline total sem cache do recurso específico)
-      if (event.request.mode === 'navigate') {
-        return caches.match('./index.html');
-      }
     })
   );
 });
