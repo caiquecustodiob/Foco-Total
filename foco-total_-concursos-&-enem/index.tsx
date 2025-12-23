@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -16,6 +15,23 @@ if ('serviceWorker' in navigator) {
     }, err => {
       console.log('Falha ao registrar SW:', err);
     });
+  });
+}
+
+// Launch Queue API para lidar com abertura de arquivos .foco
+if ('launchQueue' in window) {
+  (window as any).launchQueue.setConsumer(async (params: any) => {
+    if (params.files.length > 0) {
+      const file = await params.files[0].getFile();
+      const text = await file.text();
+      try {
+        const data = JSON.parse(text);
+        // Dispara evento customizado para o App processar o import
+        window.dispatchEvent(new CustomEvent('foco-import-data', { detail: data }));
+      } catch (e) {
+        console.error("Erro ao importar arquivo de lançamento:", e);
+      }
+    }
   });
 }
 

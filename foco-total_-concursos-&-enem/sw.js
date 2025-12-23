@@ -1,4 +1,3 @@
-
 const CACHE_NAME = 'foco-total-cache-v6.0';
 const ASSETS_TO_CACHE = [
   './',
@@ -16,6 +15,7 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -26,6 +26,7 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -42,6 +43,11 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       });
+    }).catch(() => {
+      // Retorna a página inicial se falhar (offline total sem cache do recurso específico)
+      if (event.request.mode === 'navigate') {
+        return caches.match('./index.html');
+      }
     })
   );
 });

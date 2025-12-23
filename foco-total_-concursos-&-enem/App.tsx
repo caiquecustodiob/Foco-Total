@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { HomeIcon, ApostilasIcon, SimuladosIcon, ProgressoIcon, SunIcon, MoonIcon, SettingsIcon } from './components/Icons';
 import HomeScreen from './components/HomeScreen';
@@ -31,6 +30,7 @@ const App: React.FC = () => {
   });
   const [activeApostila, setActiveApostila] = useState<ApostilaBloco | null>(null);
   const [newMedal, setNewMedal] = useState<Conquista | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   const toggleTheme = () => {
     setProgress(p => ({
@@ -38,6 +38,27 @@ const App: React.FC = () => {
       settings: { ...p.settings, theme: p.settings.theme === 'dark' ? 'light' : 'dark' }
     }));
   };
+
+  // Listener para instalação do App
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+
+    // Listener para importação de dados via Launch Queue ou Drop
+    const handleImport = (e: any) => {
+      if (confirm('Deseja importar este backup? Isso substituirá seu progresso atual.')) {
+        setProgress(e.detail);
+        alert('Dados importados com sucesso!');
+      }
+    };
+    window.addEventListener('foco-import-data', handleImport);
+
+    return () => {
+      window.removeEventListener('foco-import-data', handleImport);
+    };
+  }, []);
 
   const playSound = useCallback((type: 'success' | 'error' | 'achievement') => {
     if (!progress.settings.soundEnabled) return;
@@ -104,7 +125,6 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 text-slate-800 dark:text-slate-100`}>
-      {/* Medal Unlock Overlay */}
       {newMedal && (
         <div className="fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-8 animate-fade-in backdrop-blur-md">
            <div className="text-center animate-slide-up">
@@ -154,7 +174,7 @@ const App: React.FC = () => {
         {screen === 'simulados' && <SimuladosScreen progress={progress} setProgress={setProgress} addXP={(xp: number) => { setProgress(p => ({ ...p, xp: p.xp + xp })); playSound('success'); }} playSound={playSound} />}
         {screen === 'jogos' && <GamesScreen progress={progress} setProgress={setProgress} playSound={playSound} />}
         {screen === 'progresso' && <ProgressoScreen progress={progress} level={level} />}
-        {screen === 'settings' && <SettingsScreen progress={progress} setProgress={setProgress} />}
+        {screen === 'settings' && <SettingsScreen progress={progress} setProgress={setProgress} deferredPrompt={deferredPrompt} />}
       </main>
 
       {screen !== 'leitura' && (
