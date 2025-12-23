@@ -6,8 +6,10 @@ export const blocos: Bloco[] = [
   { id: "mat-ma", tipo: "materia", nome: "Matemática", icone: "📐", cor: "from-orange-500 to-red-800" },
   { id: "mat-hi", tipo: "materia", nome: "História", icone: "🏛️", cor: "from-amber-600 to-orange-900" },
   { id: "mat-bi", tipo: "materia", nome: "Biologia", icone: "🌿", cor: "from-emerald-600 to-teal-900" },
+  
   { id: "tema-pt1", tipo: "tema", nome: "Sintaxe", materiaId: "mat-pt" },
   { id: "tema-ma1", tipo: "tema", nome: "Aritmética", materiaId: "mat-ma" },
+
   { 
     id: "apo-pt1", 
     tipo: "apostila", 
@@ -15,6 +17,23 @@ export const blocos: Bloco[] = [
     titulo: "Sujeito e Predicado", 
     conteudo: "[DEF] Sujeito é o termo sobre o qual se declara algo.\n[REG] O verbo deve concordar com o núcleo do sujeito.\n[ALERTA] No sujeito oculto, o termo não aparece mas é identificável.\n\nExemplo: 'Compramos pão'. Sujeito: Nós (Oculto)." 
   },
+  
+  {
+    id: "vid-pt1",
+    tipo: "video",
+    temaId: "tema-pt1",
+    titulo: "Análise Sintática Completa",
+    url: "https://www.youtube.com/embed/dQw4w9WgXcQ" // Exemplo: Link real seria colocado aqui
+  },
+
+  {
+    id: "vid-ma1",
+    tipo: "video",
+    temaId: "tema-ma1",
+    titulo: "Aritmética Básica para Concursos",
+    url: "https://www.youtube.com/embed/jNQXAC9IVRw"
+  },
+
   {
     id: "q1", tipo: "questao", temaId: "tema-pt1", materiaId: "mat-pt",
     pergunta: "Em 'Choveu muito ontem', o sujeito é:",

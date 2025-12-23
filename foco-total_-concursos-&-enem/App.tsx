@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { HomeIcon, ApostilasIcon, SimuladosIcon, ProgressoIcon, SunIcon, MoonIcon, SettingsIcon } from './components/Icons';
 import HomeScreen from './components/HomeScreen';
 import BibliotecaScreen from './components/BibliotecaScreen';
 import LeituraScreen from './components/LeituraScreen';
+import VideoPlayerScreen from './components/VideoPlayerScreen';
 import SimuladosScreen from './components/SimuladosScreen';
 import GamesScreen from './components/GamesScreen';
 import ProgressoScreen from './components/ProgressoScreen';
 import SettingsScreen from './components/SettingsScreen';
 import { CONQUISTAS_BASE } from './data';
-import type { Screen, UserProgress, ApostilaBloco, Conquista } from './types';
+import type { Screen, UserProgress, ApostilaBloco, VideoBloco, Conquista } from './types';
 
 const INITIAL_PROGRESS: UserProgress = {
   xp: 0,
@@ -19,16 +21,30 @@ const INITIAL_PROGRESS: UserProgress = {
   historico: [],
   metaDiaria: 30,
   tempoFocadoHoje: 0,
-  settings: { fontSize: 16, theme: 'light', brightness: 100, soundEnabled: true }
+  settings: { 
+    fontSize: 16, 
+    theme: 'light', 
+    brightness: 100, 
+    soundEnabled: true,
+    ambientSoundEnabled: false 
+  }
 };
 
 const App: React.FC = () => {
-  const [screen, setScreen] = useState<Screen | 'settings'>('home');
+  const [screen, setScreen] = useState<Screen | 'settings' | 'video'>('home');
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('foco_total_lego_v5');
-    return saved ? JSON.parse(saved) : INITIAL_PROGRESS;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.settings && parsed.settings.ambientSoundEnabled === undefined) {
+        parsed.settings.ambientSoundEnabled = false;
+      }
+      return parsed;
+    }
+    return INITIAL_PROGRESS;
   });
   const [activeApostila, setActiveApostila] = useState<ApostilaBloco | null>(null);
+  const [activeVideo, setActiveVideo] = useState<VideoBloco | null>(null);
   const [newMedal, setNewMedal] = useState<Conquista | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -39,14 +55,12 @@ const App: React.FC = () => {
     }));
   };
 
-  // Listener para instalação do App
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
     });
 
-    // Listener para importação de dados via Launch Queue ou Drop
     const handleImport = (e: any) => {
       if (confirm('Deseja importar este backup? Isso substituirá seu progresso atual.')) {
         setProgress(e.detail);
@@ -126,25 +140,40 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 text-slate-800 dark:text-slate-100`}>
       {newMedal && (
-        <div className="fixed inset-0 z-[1000] bg-black/90 flex items-center justify-center p-8 animate-fade-in backdrop-blur-md">
-           <div className="text-center animate-slide-up">
-              <div className={`w-40 h-40 bg-gradient-to-br ${newMedal.cor} rounded-full flex items-center justify-center text-7xl shadow-[0_0_50px_rgba(212,175,55,0.4)] mx-auto mb-6 animate-bounce-soft`}>
+        <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-8 animate-fade-in backdrop-blur-xl">
+           <div className="text-center animate-slide-up relative">
+              <div className="absolute inset-0 pointer-events-none">
+                {[...Array(12)].map((_, i) => (
+                  <div 
+                    key={i}
+                    className="absolute w-2 h-2 bg-gold rounded-full animate-sparkle"
+                    style={{
+                      left: `${50 + 70 * Math.cos(i * (Math.PI / 6))}%`,
+                      top: `${50 + 70 * Math.sin(i * (Math.PI / 6))}%`,
+                      animationDelay: `${i * 0.15}s`,
+                      boxShadow: '0 0 10px #D4AF37'
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className={`w-40 h-40 bg-gradient-to-br ${newMedal.cor} rounded-full flex items-center justify-center text-7xl shadow-[0_0_60px_rgba(212,175,55,0.5)] mx-auto mb-6 animate-bounce-soft relative z-10 border-4 border-white/20`}>
                 {newMedal.icone}
               </div>
-              <h2 className="text-white text-3xl font-black mb-2">CONQUISTA IMPERIAL!</h2>
+              <h2 className="text-white text-3xl font-black mb-2 uppercase tracking-tighter">Conquista Imperial</h2>
               <p className="text-gold font-bold text-lg mb-8 uppercase tracking-widest">{newMedal.titulo}</p>
               <button 
                 onClick={() => setNewMedal(null)}
-                className="bg-white text-primary font-black px-10 py-4 rounded-2xl active:scale-95 transition-all shadow-xl"
+                className="bg-white text-primary font-black px-12 py-5 rounded-2xl active:scale-95 transition-all shadow-2xl uppercase text-sm tracking-widest"
               >
-                RECEBER HONRARIA
+                Receber Honraria
               </button>
            </div>
         </div>
       )}
 
-      {screen !== 'leitura' && (
-        <header className="sticky top-0 z-[100] bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 px-6 py-4 flex items-center justify-between">
+      {screen !== 'leitura' && screen !== 'video' && (
+        <header className="sticky top-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200 dark:border-white/5 px-6 py-4 flex items-center justify-between pt-safe">
           <div className="flex items-center gap-3">
             <span className="text-2xl animate-pulse-soft">🏆</span>
             <div>
@@ -152,14 +181,14 @@ const App: React.FC = () => {
               <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{level}</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-             <button onClick={toggleTheme} className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500">
+          <div className="flex items-center gap-2">
+             <button onClick={toggleTheme} className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 active:scale-90 transition-all">
                {progress.settings.theme === 'dark' ? <SunIcon /> : <MoonIcon />}
              </button>
-             <button onClick={() => setScreen('settings')} className={`w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 transition-colors ${screen === 'settings' ? 'text-primary' : 'text-slate-500'}`}>
+             <button onClick={() => setScreen('settings')} className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 transition-colors active:scale-90 ${screen === 'settings' ? 'text-primary' : 'text-slate-500'}`}>
                 <SettingsIcon />
              </button>
-             <div className="flex items-center gap-1.5 bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
+             <div className="flex items-center gap-1.5 bg-gold/10 px-3 py-1.5 rounded-full border border-gold/20">
                 <span className="text-xs">🔥</span>
                 <span className="text-xs font-black text-gold">{progress.streak}</span>
              </div>
@@ -167,18 +196,19 @@ const App: React.FC = () => {
         </header>
       )}
 
-      <main className={`flex-grow ${screen !== 'leitura' ? 'pb-24' : ''}`}>
+      <main className={`flex-grow ${screen !== 'leitura' && screen !== 'video' ? 'pb-28' : ''}`}>
         {screen === 'home' && <HomeScreen progress={progress} setScreen={(s: any) => setScreen(s)} onRead={(a) => { setActiveApostila(a); setScreen('leitura'); }} />}
-        {screen === 'biblioteca' && <BibliotecaScreen onRead={(a) => { setActiveApostila(a); setScreen('leitura'); }} />}
+        {screen === 'biblioteca' && <BibliotecaScreen onRead={(a) => { setActiveApostila(a); setScreen('leitura'); }} onWatch={(v) => { setActiveVideo(v); setScreen('video'); }} />}
         {screen === 'leitura' && activeApostila && <LeituraScreen apostila={activeApostila} progress={progress} setProgress={setProgress} onBack={() => setScreen('home')} onFinish={() => { setProgress(p => ({ ...p, concludedIds: [...new Set([...p.concludedIds, activeApostila.id])] })); setScreen('home'); playSound('success'); }} />}
+        {screen === 'video' && activeVideo && <VideoPlayerScreen video={activeVideo} onBack={() => setScreen('biblioteca')} onFinish={() => { setProgress(p => ({ ...p, xp: p.xp + 40, concludedIds: [...new Set([...p.concludedIds, activeVideo.id])] })); setScreen('biblioteca'); playSound('success'); }} />}
         {screen === 'simulados' && <SimuladosScreen progress={progress} setProgress={setProgress} addXP={(xp: number) => { setProgress(p => ({ ...p, xp: p.xp + xp })); playSound('success'); }} playSound={playSound} />}
         {screen === 'jogos' && <GamesScreen progress={progress} setProgress={setProgress} playSound={playSound} />}
         {screen === 'progresso' && <ProgressoScreen progress={progress} level={level} />}
         {screen === 'settings' && <SettingsScreen progress={progress} setProgress={setProgress} deferredPrompt={deferredPrompt} />}
       </main>
 
-      {screen !== 'leitura' && (
-        <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-t border-slate-200 dark:border-white/5 px-6 py-3 safe-area-bottom">
+      {screen !== 'leitura' && screen !== 'video' && (
+        <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-white/90 dark:bg-slate-950/90 backdrop-blur-3xl border-t border-slate-200 dark:border-white/5 px-6 pt-3 safe-area-bottom">
           <div className="max-w-md mx-auto flex justify-between items-center">
             <NavBtn active={screen === 'home'} icon={<HomeIcon />} label="Base" onClick={() => setScreen('home')} />
             <NavBtn active={screen === 'biblioteca'} icon={<ApostilasIcon />} label="Aulas" onClick={() => setScreen('biblioteca')} />
@@ -193,7 +223,7 @@ const App: React.FC = () => {
 };
 
 const NavBtn = ({ active, icon, label, onClick }: any) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-primary dark:text-primary-dark scale-110' : 'text-slate-400 dark:text-slate-600 opacity-60 hover:opacity-100'}`}>
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all flex-1 py-2 ${active ? 'text-primary dark:text-primary-dark scale-110' : 'text-slate-400 dark:text-slate-600 opacity-60 hover:opacity-100'}`}>
     <div className="w-6 h-6 flex items-center justify-center">{icon}</div>
     <span className="text-[8px] font-black uppercase tracking-tighter">{label}</span>
   </button>

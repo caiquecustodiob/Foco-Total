@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import type { UserProgress } from '../types';
 import { BackIcon } from './Icons';
@@ -42,7 +43,6 @@ const SettingsScreen: React.FC<Props> = ({ progress, setProgress, deferredPrompt
         await writable.write(JSON.stringify(progress, null, 2));
         await writable.close();
       } else {
-        // Fallback para navegadores sem File System Access API
         const blob = new Blob([JSON.stringify(progress)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -117,7 +117,6 @@ const SettingsScreen: React.FC<Props> = ({ progress, setProgress, deferredPrompt
       </header>
       
       <div className="space-y-4">
-        {/* Sessão de Instalação */}
         {deferredPrompt && (
           <section className="bg-primary/10 dark:bg-primary-dark/10 p-6 rounded-[2.5rem] border-2 border-primary/20 animate-bounce-soft">
             <div className="flex items-center gap-4">
@@ -152,13 +151,30 @@ const SettingsScreen: React.FC<Props> = ({ progress, setProgress, deferredPrompt
                 className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-primary"
               />
             </div>
+            
             <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-white/5">
-              <p className="text-sm font-black dark:text-white">Efeitos Sonoros</p>
+              <div className="flex flex-col">
+                <p className="text-sm font-black dark:text-white">Efeitos Sonoros</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Feedback de XP e Acertos</p>
+              </div>
               <button 
                 onClick={() => setProgress((p: any) => ({ ...p, settings: { ...p.settings, soundEnabled: !p.settings.soundEnabled } }))}
                 className={`w-14 h-7 rounded-full transition-all relative ${progress.settings.soundEnabled ? 'bg-primary dark:bg-primary-dark' : 'bg-slate-300 dark:bg-slate-700'}`}
               >
                 <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${progress.settings.soundEnabled ? 'left-8' : 'left-1'}`} />
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-white/5">
+              <div className="flex flex-col">
+                <p className="text-sm font-black dark:text-white">Som Ambiente (Zen)</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Chuva Leve nas Lições</p>
+              </div>
+              <button 
+                onClick={() => setProgress((p: any) => ({ ...p, settings: { ...p.settings, ambientSoundEnabled: !p.settings.ambientSoundEnabled } }))}
+                className={`w-14 h-7 rounded-full transition-all relative ${progress.settings.ambientSoundEnabled ? 'bg-primary dark:bg-primary-dark' : 'bg-slate-300 dark:bg-slate-700'}`}
+              >
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${progress.settings.ambientSoundEnabled ? 'left-8' : 'left-1'}`} />
               </button>
             </div>
           </div>

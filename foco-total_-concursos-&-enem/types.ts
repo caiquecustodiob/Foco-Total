@@ -70,6 +70,7 @@ export interface UserProgress {
     theme: 'light' | 'dark';
     brightness: number;
     soundEnabled: boolean;
+    ambientSoundEnabled: boolean;
   };
 }
 
