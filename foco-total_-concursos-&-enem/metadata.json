@@ -1,5 +1,6 @@
 {
-  "name": "Foco Total: Concursos & ENEM",
-  "description": "Um aplicativo web completo para estudos de concursos e ENEM, com apostilas, simulados, dicas e videoaulas. Acompanhe seu progresso e prepare-se para o sucesso!",
+  "name": "Foco Total - Estudos Pro",
+  "short_name": "Foco Total",
+  "description": "Plataforma completa para ENEM e Concursos com gamificação e modo offline.",
   "requestFramePermissions": []
 }

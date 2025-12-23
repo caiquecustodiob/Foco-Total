@@ -1,49 +1,106 @@
 
 import React from 'react';
-import type { Screen } from '../types';
-import { ApostilasIcon, DicasIcon, ProgressoIcon, SimuladosIcon, VideoaulasIcon } from './Icons';
+import { blocos } from '../data';
+import type { MateriaBloco, UserProgress, Screen, ApostilaBloco } from '../types';
 
-interface HomeScreenProps {
-  setScreen: (screen: Screen) => void;
+interface Props {
+  progress: UserProgress;
+  setScreen: (s: Screen) => void;
+  onRead: (apo: ApostilaBloco) => void;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ setScreen }) => {
+const HomeScreen: React.FC<Props> = ({ progress, setScreen, onRead }) => {
+  const materias = blocos.filter(b => b.tipo === "materia") as MateriaBloco[];
+  const apostilas = blocos.filter(b => b.tipo === "apostila") as ApostilaBloco[];
+  
+  const heroApo = apostilas[0];
+  const focusPercent = Math.min(100, (progress.tempoFocadoHoje / (progress.metaDiaria * 60)) * 100);
+
   return (
-    <div className="flex flex-col items-center justify-center text-center animate-fade-in">
-        <div className="bg-primary/10 dark:bg-primary/20 p-6 rounded-full mb-6">
-            <h1 className="text-5xl">🎯</h1>
+    <div className="animate-fade-in pb-20">
+      {/* Hero Section */}
+      <section className="relative h-[55vh] w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 dark:from-primary-dark/20 to-slate-50 dark:to-slate-950" />
+        <div className="absolute inset-0 flex items-center justify-center text-[12rem] opacity-5 select-none pointer-events-none">🏛️</div>
+        
+        <div className="absolute bottom-0 left-0 p-8 space-y-4 w-full bg-gradient-to-t from-slate-50 dark:from-slate-950 via-slate-50/90 dark:via-slate-950/80 to-transparent">
+          <div className="flex items-center gap-2">
+            <span className="bg-primary dark:bg-primary-dark text-[10px] text-white font-black px-2 py-0.5 rounded-sm">CONSELHO</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sua próxima lição</span>
+          </div>
+          <h1 className="text-4xl font-black text-slate-800 dark:text-white leading-tight">{heroApo.titulo}</h1>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => onRead(heroApo)}
+              className="flex-grow btn-primary text-sm font-black py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              INICIAR ESTUDO
+            </button>
+            <button onClick={() => setScreen('biblioteca')} className="px-6 bg-white dark:bg-white/10 backdrop-blur-md text-slate-800 dark:text-white border border-slate-200 dark:border-white/10 font-black py-4 rounded-2xl">
+              MAIS
+            </button>
+          </div>
         </div>
-      <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Foco Total</h2>
-      <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">Sua jornada para a aprovação começa aqui. Escolha uma opção abaixo para começar a estudar.</p>
-      
-      <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-        <HomeButton icon={<ApostilasIcon />} label="Apostilas" onClick={() => setScreen('apostilas')} />
-        <HomeButton icon={<SimuladosIcon />} label="Simulados" onClick={() => setScreen('simulados')} />
-        <HomeButton icon={<DicasIcon />} label="Leitura & Dicas" onClick={() => setScreen('dicas')} />
-        <HomeButton icon={<VideoaulasIcon />} label="Videoaulas" onClick={() => setScreen('videoaulas')} />
-        <div className="col-span-2">
-            <HomeButton icon={<ProgressoIcon />} label="Meu Progresso" onClick={() => setScreen('progresso')} />
+      </section>
+
+      {/* Progress Bar com Gold Accent */}
+      <div className="px-6 -mt-6 relative z-10">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200 dark:border-white/10 p-5 rounded-[2.5rem] flex items-center justify-between shadow-xl shadow-slate-200/50 dark:shadow-none">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center text-xl">🔱</div>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Foco do Dia</p>
+              <p className="text-xs font-black dark:text-white">{Math.floor(progress.tempoFocadoHoje/60)} / {progress.metaDiaria}m</p>
+            </div>
+          </div>
+          <div className="h-2 w-32 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-full bg-gold transition-all duration-700" style={{ width: `${focusPercent}%` }} />
+          </div>
         </div>
+      </div>
+
+      {/* Categories Row */}
+      <div className="mt-12 space-y-12 pl-6">
+        <section className="space-y-4">
+          <h3 className="text-xl font-black tracking-tight text-slate-800 dark:text-white">Áreas de Domínio</h3>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x pb-4">
+            {materias.map(m => (
+              <button 
+                key={m.id}
+                onClick={() => setScreen('biblioteca')}
+                className={`flex-shrink-0 w-36 h-48 rounded-[2rem] bg-gradient-to-br ${m.cor} p-5 flex flex-col justify-between snap-start active:scale-90 transition-transform shadow-lg relative overflow-hidden group`}
+              >
+                <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform">{m.icone}</span>
+                <span className="font-black text-white text-xs text-left leading-tight relative z-10">{m.nome}</span>
+                <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mb-8 pointer-events-none" />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4 pr-6">
+          <h3 className="text-xl font-black tracking-tight text-slate-800 dark:text-white">Em Progresso</h3>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x pb-4">
+            {apostilas.map(a => (
+              <button 
+                key={a.id}
+                onClick={() => onRead(a)}
+                className="flex-shrink-0 w-72 h-44 bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-white/5 snap-start relative group shadow-sm"
+              >
+                <div className="absolute inset-0 bg-primary/5 dark:bg-primary-dark/5 group-hover:bg-primary/10 transition-colors" />
+                <div className="absolute bottom-0 p-5 w-full bg-gradient-to-t from-white dark:from-black via-white/80 dark:via-black/80 to-transparent">
+                  <p className="text-slate-800 dark:text-white font-black text-sm truncate">{a.titulo}</p>
+                  <div className="h-1 bg-slate-100 dark:bg-white/10 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-gold" style={{ width: progress.concludedIds.includes(a.id) ? '100%' : '5%' }} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
 };
-
-interface HomeButtonProps {
-    icon: React.ReactNode;
-    label: string;
-    onClick: () => void;
-}
-
-const HomeButton: React.FC<HomeButtonProps> = ({icon, label, onClick}) => (
-    <button
-        onClick={onClick}
-        className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center text-center"
-    >
-        <div className="text-primary text-3xl mb-3">{icon}</div>
-        <span className="font-semibold text-slate-700 dark:text-slate-200">{label}</span>
-    </button>
-);
-
 
 export default HomeScreen;

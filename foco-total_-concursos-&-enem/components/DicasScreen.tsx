@@ -4,7 +4,7 @@ import { DICAS_DATA } from '../data';
 
 const DicasScreen: React.FC = () => {
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in p-4">
       <h2 className="text-2xl font-bold mb-4">Leitura & Dicas</h2>
       <p className="text-slate-600 dark:text-slate-400 mb-6">Pequenas dicas que fazem uma grande diferença na sua preparação.</p>
       <div className="space-y-4">

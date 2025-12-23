@@ -1,76 +1,93 @@
 
-import React, { useState, useEffect } from 'react';
-import type { ProgressoSimulado } from '../types';
+import React, { useMemo } from 'react';
+import { blocos, CONQUISTAS_BASE } from '../data';
+import type { UserProgress, MateriaBloco } from '../types';
 
-const ProgressoScreen: React.FC = () => {
-  const [historico, setHistorico] = useState<ProgressoSimulado[]>([]);
+interface Props {
+  progress: UserProgress;
+  level: string;
+}
 
-  useEffect(() => {
-    const historicoJSON = localStorage.getItem('progressoSimulados');
-    if (historicoJSON) {
-      setHistorico(JSON.parse(historicoJSON));
-    }
-  }, []);
+const ProgressoScreen: React.FC<Props> = ({ progress, level }) => {
+  const materias = blocos.filter(b => b.tipo === "materia") as MateriaBloco[];
 
-  const totalSimulados = historico.length;
-  const mediaAcertos = totalSimulados > 0 
-    ? (historico.reduce((acc, curr) => acc + (curr.acertos / curr.total), 0) / totalSimulados * 100).toFixed(1)
-    : '0.0';
-
-  const materiasEstudadas = [...new Set(historico.map(h => h.materia))];
+  const statsByMateria = useMemo(() => {
+    const stats: Record<string, { correct: number, total: number }> = {};
+    materias.forEach(m => stats[m.id] = { correct: 0, total: 0 });
+    progress.historico.forEach(h => {
+      if (stats[h.materiaId]) {
+        stats[h.materiaId].total++;
+        if (h.acerto) stats[h.materiaId].correct++;
+      }
+    });
+    return stats;
+  }, [progress.historico, materias]);
 
   return (
-    <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold mb-6">Meu Progresso</h2>
-      
-      {totalSimulados === 0 ? (
-        <div className="text-center bg-white dark:bg-slate-800 p-8 rounded-lg shadow-md">
-            <h3 className="text-2xl">📊</h3>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">Você ainda não completou nenhum simulado. Faça um para ver seu progresso aqui!</p>
+    <div className="p-6 space-y-10 animate-fade-in pb-32">
+      <header className="text-center py-6">
+        <div className="w-28 h-28 bg-gradient-to-br from-primary to-indigo-900 rounded-full flex items-center justify-center text-5xl shadow-[0_0_40px_rgba(37,99,235,0.3)] mx-auto border-4 border-white dark:border-slate-900 relative">
+          <span className="animate-bounce-soft">🎓</span>
+          <div className="absolute -bottom-2 bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase">Lvl {Math.floor(progress.xp/500)}</div>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md text-center">
-              <div className="text-3xl font-bold text-primary">{totalSimulados}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">Simulados Feitos</div>
-            </div>
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md text-center">
-              <div className="text-3xl font-bold text-primary">{mediaAcertos}%</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">Média de Acertos</div>
-            </div>
-          </div>
+        <h2 className="text-3xl font-black mt-6 dark:text-white">{level}</h2>
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">{progress.xp} XP acumulado</p>
+      </header>
 
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-md mb-6">
-            <h3 className="font-semibold mb-2">Matérias Estudadas</h3>
-            <div className="flex flex-wrap gap-2">
-                {materiasEstudadas.length > 0 ? materiasEstudadas.map(m => (
-                    <span key={m} className="bg-primary/10 text-primary text-xs font-medium px-2.5 py-0.5 rounded-full">{m}</span>
-                )) : <p className="text-sm text-slate-500">Nenhuma</p>}
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-xl font-bold mb-4">Histórico Recente</h3>
-            <div className="space-y-3">
-              {historico.map((item, index) => (
-                <div key={index} className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                  <div>
-                    <div className="font-semibold">{item.materia}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{new Date(item.data).toLocaleString('pt-BR')}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`font-bold ${item.acertos/item.total >= 0.7 ? 'text-green-500' : 'text-amber-500'}`}>
-                      {((item.acertos / item.total) * 100).toFixed(0)}%
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{item.acertos}/{item.total} acertos</div>
-                  </div>
+      {/* Hall of Fame - Medal Case */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-end">
+           <h3 className="text-xl font-black flex items-center gap-2 dark:text-white">
+            <span className="text-yellow-500">🏅</span> Hall de Medalhas
+           </h3>
+           <span className="text-[10px] font-black text-slate-400 uppercase">{progress.unlockedConquistas.length}/{CONQUISTAS_BASE.length} Coletadas</span>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4">
+          {CONQUISTAS_BASE.map(c => {
+            const isUnlocked = progress.unlockedConquistas.includes(c.id);
+            return (
+              <div key={c.id} className="flex flex-col items-center gap-2">
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl transition-all duration-500 relative group
+                  ${isUnlocked ? `bg-gradient-to-br ${c.cor} shadow-lg scale-100` : 'bg-slate-200 dark:bg-slate-800 opacity-30 scale-90 grayscale'}
+                `}>
+                  {c.icone}
+                  {isUnlocked && <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse" />}
                 </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+                <p className={`text-[9px] font-black uppercase text-center leading-tight tracking-tighter ${isUnlocked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400'}`}>
+                  {c.titulo}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h3 className="text-xl font-black flex items-center gap-2 dark:text-white">
+          <span className="text-primary">📊</span> Precisão por Área
+        </h3>
+        <div className="space-y-4">
+          {materias.map(m => {
+            const s = statsByMateria[m.id];
+            const acc = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+            return (
+              <div key={m.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                <div className="flex justify-between items-end mb-3">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.nome}</p>
+                    <p className="text-xl font-black text-slate-800 dark:text-white">{acc}% <span className="text-xs font-bold text-slate-400">Taxa de Acerto</span></p>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase">{s.total} Questões</p>
+                </div>
+                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${acc}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 };
